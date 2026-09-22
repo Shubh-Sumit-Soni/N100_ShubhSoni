@@ -5,6 +5,24 @@
 # For more details, see
 #   http://developer.android.com/guide/developing/tools/proguard.html
 
+# ── Google Generative AI SDK ──────────────────────────────────────────────────
+-keep class com.google.ai.client.generativeai.** { *; }
+-dontwarn com.google.ai.client.generativeai.**
+
+# ── Room ──────────────────────────────────────────────────────────────────────
+-keep class * extends androidx.room.RoomDatabase { *; }
+-keep @androidx.room.Entity class * { *; }
+-keep @androidx.room.Dao interface * { *; }
+
+# ── DataStore ─────────────────────────────────────────────────────────────────
+-keepclassmembers class * extends com.google.protobuf.GeneratedMessageLite { *; }
+
+# ── Coroutines ────────────────────────────────────────────────────────────────
+-dontwarn kotlinx.coroutines.**
+
+# ── Kotlin Serialization (if used transitively) ──────────────────────────────
+-dontwarn kotlinx.serialization.**
+
 # If your project uses WebView with JS, uncomment the following
 # and specify the fully qualified class name to the JavaScript interface
 # class:
