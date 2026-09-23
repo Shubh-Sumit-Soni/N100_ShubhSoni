@@ -1,233 +1,205 @@
-# Gemini Chat — Enhanced Jetpack Compose App
+# Gemini AI Study Workspace — Enhanced Android Jetpack Compose App
 
-An enhanced Android Gemini chat application built on the professor-provided **GeminiApiComposeStarter** repository. The app provides a secure, persistent, responsive, and tested AI chat experience using Google's Gemini API.
+A comprehensive, distinctive, and production-quality **AI Study Workspace** built on top of the professor-provided **GeminiApiComposeStarter** repository.
 
----
-
-## Features
-
-| Feature | Description |
-|---|---|
-| **Gemini AI Chat** | Multi-turn conversation with Google Gemini via the Generative AI SDK |
-| **Material 3 UI** | Polished chat bubbles, top bar, empty state, loading indicator, and Snackbar errors |
-| **LazyColumn Conversation** | Efficient scrolling list with stable message keys and auto-scroll |
-| **Voice Input** | Speech-to-text via `RecognizerIntent` — tap the mic, speak, review, then send |
-| **Room Persistence** | Chat history survives app restarts using Room database |
-| **Preferences DataStore** | User preferences stored via Jetpack DataStore |
-| **Secure API Key Handling** | AES-256-GCM encryption with Android Keystore; key never persisted in plaintext |
-| **Responsive Layout** | Adapts to phones, tablets, portrait, and landscape orientations |
-| **Dark Mode** | Follows system theme with Material 3 dynamic colors (Android 12+) |
-| **StateFlow Architecture** | ViewModel exposes `StateFlow<ChatUiState>` collected with `collectAsStateWithLifecycle()` |
-| **Unit Tests** | 11 ViewModel tests with fake repository and coroutine test dispatcher |
-| **Compose UI Tests** | 11 instrumented Compose tests covering rendering, interaction, and state display |
-| **Release Minification** | R8/ProGuard enabled for release builds |
+The application elevates conventional conversational chat into a structured, pedagogical student companion powered by Google's Gemini API, complete with multi-turn conversation memory, 8 specialized educational study modes, multimodal diagram analysis, session management, offline study notes, text-to-speech reading, Room v2 database persistence with migrations, and Android Keystore AES-256-GCM encryption.
 
 ---
 
-## Architecture
+## 🌟 What Makes This Distinctive?
+
+Unlike a basic chatbot, this application is engineered as an **interactive learning environment**:
+
+1. **8 Dedicated AI Study Modes**: Not generic prompts, but dedicated pedagogical workflows (Concept Explainer, Socratic Study Tutor, Practice Quiz, Deep Challenge, Lecture Summarizer, Code Reviewer, Diagram Solver, and General Chat).
+2. **True Conversational Memory**: Gemini maintains bounded multi-turn conversational context (`model.startChat`), so follow-up inquiries understand previous context seamlessly.
+3. **Multimodal Diagram & Math Input**: Students can attach images of equations, textbook diagrams, circuits, or whiteboard code for step-by-step visual analysis.
+4. **Rich Markdown & Code Block Viewer**: Monospace syntax formatting with horizontal scroll and a one-tap **Copy Code** button.
+5. **Interactive Practice Quizzes & Insights**: Generates structured multiple-choice questions with answer evaluations, persistent attempt histories, and performance analytics.
+6. **Offline Study Notes**: Star any high-yield Gemini explanation to persist it locally for offline revision.
+7. **Text-To-Speech (TTS)**: Listen to explanations read aloud with native Android TextToSpeech.
+8. **Multi-Session Management**: Create, switch, rename, and delete separate study conversations.
+
+---
+
+## 🏛️ Architecture Overview
+
+The codebase adheres strictly to clean architectural separation between presentation, domain, and data layers:
 
 ```
-UI Layer
-├── MainActivity
-├── ChatScreen (Composables)
-│   ├── ChatTopBar
-│   ├── ChatMessageList (LazyColumn)
-│   │   └── ChatMessageBubble
-│   ├── ChatEmptyState
-│   ├── LoadingBubble
-│   └── ChatInputBar (TextField + Voice + Send)
-└── Theme (Material 3, Dark/Light)
+UI Layer (Jetpack Compose & Material 3)
+├── MainActivity (Edge-to-edge, Secure Key Init, TTS Lifecycle)
+├── ChatScreen
+│   ├── WorkspaceTopBar (Drawer Toggle, Session Title, Saved Notes, Insights, Clear)
+│   ├── ModeAndActionHeader (Active Mode Badge, Socratic Quick Action Chips)
+│   ├── ConversationDrawer (Multi-Session Switching & Creation)
+│   ├── ChatMessageList (LazyColumn with stable UUID keys & auto-scrolling)
+│   │   └── WorkspaceMessageBubble (User & Gemini)
+│   │       ├── MarkdownViewer (Headings, bold text, styled code blocks + Copy button)
+│   │       ├── Attached Image Thumbnail (Multimodal)
+│   │       └── Gemini Action Bar (Copy, Read Aloud, Save Note, Simplify)
+│   ├── WorkspaceLoadingBubble (Animated thinking state)
+│   └── WorkspaceInputBar (Image picker, Voice mic, Mode selector, Multiline TextField, Send)
+├── Modals & Sheets
+│   ├── StudyModeSelectorBottomSheet (8 academic modes with icons & descriptions)
+│   ├── SavedNotesDialog (Offline reference sheet)
+│   └── SessionInsightsDialog (Quiz scores, strong areas, revision topics)
+└── Theme (Material 3 Dynamic Dark/Light, responsive centered constraints up to 840dp)
 
 ViewModel Layer
-└── ChatViewModel
-    ├── StateFlow<ChatUiState>
-    ├── GeminiRepository (API calls)
-    └── ChatHistoryRepository (Room)
+└── ChatViewModel (StateFlow<ChatUiState>, lifecycle-aware collection)
+    ├── ContextEngine (Bounded multi-turn rolling history window + mode instructions)
+    ├── ResponseValidator (Sanitization, validation, zero-crash guarantee)
+    ├── Auto-Titling (Background session naming via Gemini)
+    └── Repositories Coordination (GeminiGateway + Room v2 + Preferences)
 
-Data Layer
-├── GeminiRepository / GeminiRepositoryImpl
-├── Room
-│   ├── ChatMessageEntity
-│   ├── ChatMessageDao
-│   └── AppDatabase
-├── ChatHistoryRepository
-└── UserPreferencesRepository (DataStore)
+Core AI & Processing Layer
+├── ContextEngine (Curates rolling conversation context without token overflow)
+├── StudyPromptBuilder (System instruction strategies for all 8 modes)
+├── ResponseValidator (Output validation, sanitization, code extraction)
+├── AiResponse & AiResponseParser (Structured code blocks, quiz items, suggestions)
+├── GeminiGateway / GeminiRepository (SDK abstraction, multi-turn, multimodal, retry)
+└── TextToSpeechManager (Android native TTS lifecycle management)
+
+Data & Persistence Layer (Room v2)
+├── AppDatabase (Version 2, with safe MIGRATION_1_2 preserving existing records)
+├── ConversationEntity & ConversationDao (Sessions history)
+├── ChatMessageEntity & ChatMessageDao (Conversations, saved notes)
+├── QuizAttemptEntity & QuizAttemptDao (Study analytics)
+├── ChatHistoryRepository (Entity ↔ Domain mapping)
+└── UserPreferencesRepository (Jetpack Preferences DataStore)
 
 Security Layer
 └── SecureApiKeyManager
-    ├── Android Keystore (AES-256 key)
-    └── AES/GCM/NoPadding encryption
+    ├── Android Keystore (Hardware-backed AES-256 master key)
+    └── AES/GCM/NoPadding encrypted storage in private SharedPreferences
 ```
 
 ---
 
-## Setup
+## 📚 The 8 AI Study Modes
 
-### Prerequisites
+| Mode | Pedagogical Purpose | Output Structure |
+|---|---|---|
+| **💬 General Chat** | Open-ended academic assistant | Balanced explanations, clear formatting |
+| **💡 Concept Explainer** | Systematic concept breakdown | Core Concept &rarr; Intuition &rarr; Key Takeaways &rarr; Example &rarr; Pitfalls &rarr; Self-Check |
+| **🎓 Socratic Study Tutor** | Active step-by-step guided learning | Teaches one micro-concept at a time, then quizzes you before moving forward |
+| **🎯 Practice Quiz** | Automated examination generator | Multiple-choice questions with 4 options, answer key, and detailed rationale |
+| **🔥 Deep Challenge** | Critical evaluation & debate | Spotting subtle bugs, counter-arguments, performance trade-offs |
+| **📝 Lecture Summarizer** | Exam revision condensation | Executive TL;DR &rarr; Key Takeaways &rarr; Glossary &rarr; Exam Revision Notes |
+| **💻 Code Reviewer** | Static analysis & optimization | Code Summary &rarr; Bugs & Edge Cases &rarr; Big-O Complexity &rarr; Refactored Code Block |
+| **👁️ Image Analysis** | Multimodal visual problem solver | Diagram breakdown, equation transcription, step-by-step mathematical solution |
 
-- **Android Studio** Ladybug or newer
-- **JDK 17**
-- **Android SDK** with API 36 (compileSdk) and API 26+ device/emulator
-- A valid **Gemini API key** from [Google AI Studio](https://aistudio.google.com/apikey)
+---
 
-### API Key Configuration
+## 🔒 Security Model & Secrets Management
 
-1. Copy the template:
-   ```
+Security is a primary requirement. The API key is safeguarded through a multi-tier defense:
+
+1. **Zero Committed Secrets**: `local.properties` is explicitly git-ignored. The repository contains only safe templates (`local.properties.example`).
+2. **Gradle Ingestion Chain**: Gradle reads `GEMINI_API_KEY` from `local.properties` (or environment variables) and injects it into `BuildConfig.GEMINI_API_KEY`.
+3. **Android Keystore Encryption**: On first app launch, `SecureApiKeyManager` generates an AES-256 key inside the hardware-backed `AndroidKeyStore`. The key is encrypted with `AES/GCM/NoPadding` and stored as ciphertext in private `SharedPreferences`.
+4. **In-Memory Decryption**: On subsequent launches, the ciphertext is decrypted only in memory when instantiating `GenerativeModel`.
+5. **Leak Prevention**: The plaintext API key is never logged, never saved in plaintext, never exposed in error snackbars, and output is actively sanitized by `ResponseValidator`.
+
+> **⚠️ Security Limitation:** Client-side encryption protects keys at rest on device. On rooted devices or under advanced memory analysis, client-side secrets can be intercepted. Production deployments should route requests through an authenticated backend proxy with Firebase App Check.
+
+---
+
+## 🗄️ Database Architecture & Migrations
+
+The application uses Room version 2 with a non-destructive migration (`MIGRATION_1_2`):
+
+- **`conversations`**: Stores session ID, title, timestamp, and mode.
+- **`chat_messages`**: Stores message ID, `conversationId` (defaults to `'default'`), role, content, timestamp, `isSaved` bookmark flag, and optional `imageUri`.
+- **`quiz_attempts`**: Stores quiz session topic, score, question count, percentage, strong areas, and revision recommendations.
+
+> **Zero Data Loss:** `MIGRATION_1_2` executes `ALTER TABLE` and `INSERT OR IGNORE INTO conversations` to preserve all existing messages on previously tested devices under a `"Main Study Session"`.
+
+---
+
+## 🧪 Testing Suite
+
+Automated tests require **zero API keys** and execute in complete offline isolation using deterministic fakes:
+
+### Unit Tests (28 Tests — 100% Pass)
+Command:
+```powershell
+.\gradlew.bat testDebugUnitTest
+```
+- **`ChatViewModelTest` (18 tests)**: Initial state, prompt change, empty prompt validation, missing API key handling, send flow, loading states, Gemini response handling, error dismissals, clear history, Room persistence, history restoration on launch, mode selection, Socratic quick actions, saved note toggling, session creation and switching, session deletion, quiz score recording, and multi-turn conversational history passing.
+- **`ContextEngineTest` (3 tests)**: Bounded rolling window limits, prompt wrapping, and saved notes inclusion.
+- **`ResponseValidatorTest` (4 tests)**: Null/empty validation, code block extraction, and secret redaction.
+- **`StudyPromptBuilderTest` (3 tests)**: Mode coverage, system instructions completeness, and prompt preservation.
+
+### Compose UI Tests (15 Tests)
+- **`ChatScreenTest`**: Empty state rendering, input field, send button, voice button, mode selector button, image picker button, saved notes button, insights button, text input, message display, loading indicator, disabled states, and role labels.
+
+---
+
+## 🚀 Setup & Build Instructions
+
+### 1. Configure the API Key
+1. Copy the example properties file:
+   ```powershell
    cp local.properties.example local.properties
    ```
-
-2. Edit `local.properties` and add your real API key:
+2. Open `local.properties` and add your Google Gemini API key:
    ```properties
-   GEMINI_API_KEY=your_real_api_key_here
+   GEMINI_API_KEY=your_actual_gemini_api_key_here
    ```
 
-3. **Build the project.** The key flows through Gradle → `BuildConfig.GEMINI_API_KEY` → encrypted storage:
-
-   ```
-   local.properties (git-ignored)
-        ↓
-   Gradle reads at build time
-        ↓
-   BuildConfig.GEMINI_API_KEY
-        ↓
-   First launch: encrypted with AES-256-GCM via Android Keystore
-        ↓
-   Ciphertext stored in private SharedPreferences
-        ↓
-   Subsequent launches: decrypted in-memory only when creating Gemini client
-   ```
-
-4. **Fallback chain** (in `app/build.gradle.kts`):
-   ```kotlin
-   val geminiApiKey =
-       localProperties.getProperty("GEMINI_API_KEY")
-           ?: System.getenv("GEMINI_API_KEY")
-           ?: ""
-   ```
-
-> **⚠️ IMPORTANT:** Never commit `local.properties`. It is listed in `.gitignore`. Use `local.properties.example` as a reference.
-
----
-
-## Security Model
-
-### API Key Encryption Flow
-
-1. **Android Keystore** generates and stores an AES-256 symmetric key (alias: `gemini_api_key_alias`)
-2. On first launch, the build-time API key is encrypted using **AES/GCM/NoPadding** (128-bit authentication tag)
-3. The **IV (12 bytes) + ciphertext** are Base64-encoded and stored in a private `SharedPreferences` file
-4. The plaintext API key exists **only in memory** when initializing the `GenerativeModel` client
-5. The key is **never logged, displayed, or included in error messages**
-
-### Security Limitations
-
-> **Client-side API key protection cannot make a client-side API key completely inaccessible to a determined attacker.**
-
-Even with Android Keystore encryption:
-
-- A rooted device can access the Keystore and decrypt the key
-- The key must exist in memory to make API calls, where it can be extracted via debugging
-- The compiled APK contains the encrypted key and the code to decrypt it
-- Reverse engineering (even with R8 obfuscation) can reveal the decryption logic
-
-**For production applications, consider:**
-
-- **Backend proxy server** — the API key stays on the server, never on the client
-- **Firebase App Check** — attests that requests come from your genuine app
-- **API key restrictions** — restrict the key by Android app package name and SHA-1 fingerprint in Google Cloud Console
-- **Usage quotas** — set per-key usage limits to mitigate abuse
-
----
-
-## Building
-
-### Debug Build
-```bash
-./gradlew assembleDebug
+### 2. Build Debug APK
+```powershell
+.\gradlew.bat assembleDebug
 ```
+Output: `app/build/outputs/apk/debug/app-debug.apk`
 
-### Release Build (with R8 minification)
-```bash
-./gradlew assembleRelease
+### 3. Build Minified Release APK (R8 Enabled)
+```powershell
+.\gradlew.bat assembleRelease
 ```
+Output: `app/build/outputs/apk/release/app-release-unsigned.apk`
 
-> The release build has `isMinifyEnabled = true` with ProGuard rules configured for the Generative AI SDK, Room, DataStore, and Coroutines.
-
----
-
-## Testing
-
-### Unit Tests
-```bash
-./gradlew testDebugUnitTest
-```
-
-**11 tests** covering:
-- Initial state verification
-- Prompt changes and validation
-- Missing API key handling
-- Message send flow (user + Gemini response)
-- Error handling and dismissal
-- Clear history
-- Room DAO persistence
-- History restoration on init
-
-All tests use a `FakeGeminiRepository` and `FakeChatMessageDao` — no real API calls.
-
-### Compose UI Tests
-```bash
-./gradlew connectedDebugAndroidTest
-```
-
-> Requires a connected device or emulator.
-
-**11 tests** covering:
-- Empty state rendering
-- Input field, send button, voice button presence
-- Text entry
-- Message display with role labels
-- Loading indicator display
-- Send button disabled states (loading, empty prompt)
-- Message list vs empty state
-
----
-
-## Project Structure
-
-```
-app/src/main/java/com/fahim/geminiApiComposeStarter/
-├── MainActivity.kt
-├── data/
-│   ├── GeminiRepository.kt          # Interface
-│   ├── GeminiRepositoryImpl.kt       # Gemini SDK implementation
-│   ├── local/
-│   │   ├── AppDatabase.kt           # Room database
-│   │   ├── ChatMessageDao.kt        # Room DAO
-│   │   └── ChatMessageEntity.kt     # Room entity
-│   ├── preferences/
-│   │   └── UserPreferencesRepository.kt  # DataStore preferences
-│   └── repository/
-│       └── ChatHistoryRepository.kt  # Room ↔ domain mapping
-├── model/
-│   └── ChatMessage.kt               # Domain model + MessageRole enum
-├── security/
-│   └── SecureApiKeyManager.kt        # AES-256-GCM + Android Keystore
-└── ui/
-    ├── chat/
-    │   ├── ChatScreen.kt             # Compose UI
-    │   ├── ChatUiState.kt            # Immutable UI state
-    │   └── ChatViewModel.kt          # ViewModel + StateFlow
-    ├── text/
-    │   └── BoldMarkdown.kt           # **bold** rendering
-    └── theme/
-        ├── Color.kt
-        ├── Theme.kt
-        └── Type.kt
+### 4. Run Unit Tests
+```powershell
+.\gradlew.bat testDebugUnitTest
 ```
 
 ---
 
-## License
+## 📱 Interactive Demo Flow for Evaluation
 
-University assignment project. Not intended for production use.
+1. **Launch App**: Observe the welcoming AI Study Workspace empty state with study prompt suggestions.
+2. **Multi-Turn Conversation**:
+   - Send: `"My name is Shubh."`
+   - Send follow-up: `"What is my name?"`
+   - Observe: Gemini remembers your name via multi-turn context!
+3. **Change Study Mode**:
+   - Tap `[⚡ Chat]` in the top bar to open the **Academic AI Study Modes** bottom sheet.
+   - Select **💡 Concept Explainer**.
+   - Send: `"Explain Database Normalization."`
+   - Observe: Gemini formats output with Core Concept, Intuitive Explanation, Key Takeaways, Examples, Pitfalls, and Quick Check.
+4. **Socratic Study Tutor**:
+   - Switch to **🎓 Socratic Study Tutor**.
+   - Send: `"Teach me Binary Search Trees."`
+   - Tap the Socratic action chips (`[💡 Hint]`, `[▶ Continue]`, `[🔄 Explain Simpler]`).
+5. **Practice Quiz**:
+   - Switch to **🎯 Practice Quiz**.
+   - Send: `"Quiz me on OS Scheduling."`
+   - Tap **Study Insights** (`📊`) in the top app bar to view session analytics.
+6. **Code Review & Copy**:
+   - Switch to **💻 Code Reviewer**.
+   - Paste a code snippet.
+   - Tap the **Copy Code** icon in the code block header to copy refactored code.
+7. **Multimodal Diagram Analysis**:
+   - Tap the image attachment icon (`🖼️`).
+   - Select a diagram or equation screenshot.
+   - Send: `"Explain this architecture."`
+8. **Save Study Notes**:
+   - Tap the bookmark icon (`🔖`) on any Gemini response.
+   - Tap the **Saved Notes** icon in the top app bar to review your saved notes offline.
+9. **Text-To-Speech (TTS)**:
+   - Tap the speaker icon (`🔊`) on any response to hear it read aloud.
+10. **Multi-Session Management**:
+    - Tap the menu icon (`☰`) to open the sessions drawer.
+    - Tap **New Study Session** to start a clean conversation.
