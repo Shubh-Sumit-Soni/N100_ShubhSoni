@@ -16,6 +16,11 @@ val geminiApiKey: String =
         ?: System.getenv("GEMINI_API_KEY")
         ?: ""
 
+// Fix for Android Studio Gradle Sync: register task requested for Kotlin build scripts
+if (tasks.findByName("prepareKotlinBuildScriptModel") == null) {
+    tasks.register("prepareKotlinBuildScriptModel")
+}
+
 android {
     namespace = "com.fahim.geminiApiComposeStarter"
     compileSdk {
