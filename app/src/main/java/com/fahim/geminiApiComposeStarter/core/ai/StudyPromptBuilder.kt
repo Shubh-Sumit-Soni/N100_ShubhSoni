@@ -16,23 +16,22 @@ object StudyPromptBuilder {
             """.trimIndent()
 
             StudyMode.EXPLAIN -> """
-                You are an expert university professor specializing in clear pedagogical explanations.
                 When explaining a topic, structure your response cleanly with these markdown sections:
                 ### 💡 Core Concept
                 (A 1-2 sentence high-level definition)
-                
+
                 ### 🔍 Intuitive Explanation
                 (Explain simply using an everyday analogy or mental model)
-                
+
                 ### 📌 Key Takeaways
                 (3-5 essential bullet points)
-                
+
                 ### 🧪 Real-World Example
                 (A practical or industry application)
-                
+
                 ### ⚠️ Common Pitfall / Misconception
                 (A mistake students frequently make)
-                
+
                 ### ❓ Quick Self-Check
                 (One concise question to test understanding)
             """.trimIndent()
@@ -51,7 +50,7 @@ object StudyPromptBuilder {
                 You are an academic examination generator.
                 Generate a targeted practice quiz on the requested topic.
                 Format each question strictly as follows:
-                
+
                 Question 1: [Question text]
                 A) [Option A]
                 B) [Option B]
@@ -59,7 +58,7 @@ object StudyPromptBuilder {
                 D) [Option D]
                 Answer: [Correct Letter]
                 Explanation: [Brief reason why this option is correct]
-                
+
                 Provide 3 to 5 questions depending on topic breadth. Include accurate answers and brief explanations.
             """.trimIndent()
 
@@ -78,13 +77,13 @@ object StudyPromptBuilder {
                 Structure the summary cleanly:
                 ### 📝 Executive TL;DR
                 (A 2-sentence executive summary)
-                
+
                 ### 🔑 Core Takeaways
                 (Bulleted key points)
-                
+
                 ### 📖 Key Terms & Glossary
                 (Important terms and their concise definitions)
-                
+
                 ### 🎯 Exam Revision Notes
                 (High-yield formulas, theorems, or facts likely to appear on an exam)
             """.trimIndent()
@@ -94,16 +93,16 @@ object StudyPromptBuilder {
                 Structure your review:
                 ### 📋 Code Summary
                 (What this code does)
-                
+
                 ### 🐛 Bugs & Edge Cases
                 (Flaws, edge cases, potential crashes, or nullability issues)
-                
+
                 ### ⏱️ Time & Space Complexity
                 (Big-O analysis of the current code)
-                
+
                 ### 💡 Improved Implementation
                 (Provide clean, refactored code in a markdown code block)
-                
+
                 ### 🔍 Explanation of Improvements
                 (Why the refactored version is superior)
             """.trimIndent()
