@@ -64,6 +64,34 @@ class ChatScreenTest {
     }
 
     @Test
+    fun chatScreen_modeButton_exists() {
+        setScreen(ChatUiState())
+
+        composeTestRule.onNodeWithTag(ChatTestTags.MODE_BUTTON).assertIsDisplayed()
+    }
+
+    @Test
+    fun chatScreen_imageButton_exists() {
+        setScreen(ChatUiState())
+
+        composeTestRule.onNodeWithTag(ChatTestTags.IMAGE_BUTTON).assertIsDisplayed()
+    }
+
+    @Test
+    fun chatScreen_savedNotesButton_exists() {
+        setScreen(ChatUiState())
+
+        composeTestRule.onNodeWithTag(ChatTestTags.SAVED_NOTES_BUTTON).assertIsDisplayed()
+    }
+
+    @Test
+    fun chatScreen_insightsButton_exists() {
+        setScreen(ChatUiState())
+
+        composeTestRule.onNodeWithTag(ChatTestTags.INSIGHTS_BUTTON).assertIsDisplayed()
+    }
+
+    @Test
     fun chatScreen_userCanEnterText() {
         setScreen(ChatUiState())
 
