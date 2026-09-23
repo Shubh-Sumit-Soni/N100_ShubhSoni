@@ -14,13 +14,19 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Assignment
 import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.Psychology
 import androidx.compose.material.icons.filled.Quiz
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.School
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.ShortText
+import androidx.compose.material.icons.filled.Style
+import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material3.Card
@@ -174,5 +180,11 @@ private fun getModeIcon(mode: StudyMode): ImageVector {
         StudyMode.SUMMARIZE -> Icons.Default.ShortText
         StudyMode.CODE_REVIEW -> Icons.Default.Code
         StudyMode.IMAGE_ANALYSIS -> Icons.Default.Visibility
+        StudyMode.FLASHCARDS -> Icons.Default.Style
+        StudyMode.EXAM_SIMULATOR -> Icons.Default.Timer
+        StudyMode.STUDY_PLANNER -> Icons.Default.CalendarMonth
+        StudyMode.REVISION -> Icons.Default.Refresh
+        StudyMode.WEAK_TOPIC_DETECTOR -> Icons.Default.Search
+        StudyMode.ASSIGNMENT_ASSISTANT -> Icons.Default.Assignment
     }
 }

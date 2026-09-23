@@ -74,6 +74,12 @@ object AiResponseParser {
             StudyMode.SUMMARIZE -> listOf("Make it shorter", "Key formulas only", "Create quiz from this")
             StudyMode.CODE_REVIEW -> listOf("How to test this?", "Optimize time complexity", "Make it cleaner")
             StudyMode.IMAGE_ANALYSIS -> listOf("Explain step-by-step", "Extract text/formulas", "Solve problem")
+            StudyMode.FLASHCARDS -> listOf("Add card", "Flip all", "Practice deck", "Shuffle")
+            StudyMode.EXAM_SIMULATOR -> listOf("Submit Exam", "Time left?", "Review flagged questions")
+            StudyMode.STUDY_PLANNER -> listOf("Adjust timetable", "Add more days", "Save Plan")
+            StudyMode.REVISION -> listOf("Next weak topic", "Explain where I failed", "More drills")
+            StudyMode.WEAK_TOPIC_DETECTOR -> listOf("Start targeted quiz", "View weak topics", "Deep dive")
+            StudyMode.ASSIGNMENT_ASSISTANT -> listOf("Check rubric", "Verify edge cases", "Structure report")
         }
     }
 

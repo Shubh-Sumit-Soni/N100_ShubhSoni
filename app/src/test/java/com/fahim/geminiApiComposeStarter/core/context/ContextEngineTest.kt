@@ -61,4 +61,31 @@ class ContextEngineTest {
         assertTrue(context.systemInstruction.contains("Student's saved reference notes:"))
         assertTrue(context.systemInstruction.contains("E=mc^2"))
     }
+
+    @Test
+    fun `buildContext includes user memories and required system instructions when provided`() {
+        val memories = listOf(
+            com.fahim.geminiApiComposeStarter.data.local.UserMemoryEntity(
+                category = "PROFILE",
+                content = "Name: Shubh",
+            ),
+            com.fahim.geminiApiComposeStarter.data.local.UserMemoryEntity(
+                category = "PREFERENCE",
+                content = "I prefer concise answers",
+            ),
+        )
+
+        val context = contextEngine.buildContext(
+            history = emptyList(),
+            newPrompt = "What is my name?",
+            mode = StudyMode.CHAT,
+            userMemories = memories,
+        )
+
+        assertTrue(context.systemInstruction.contains("Information in LOCAL USER MEMORY represents facts explicitly stored by the user"))
+        assertTrue(context.systemInstruction.contains("USER MEMORY:"))
+        assertTrue(context.systemInstruction.contains("Name: Shubh"))
+        assertTrue(context.systemInstruction.contains("I prefer concise answers"))
+        assertTrue(context.memoryContext.contains("Name: Shubh"))
+    }
 }

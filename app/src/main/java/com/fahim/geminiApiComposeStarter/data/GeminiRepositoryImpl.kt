@@ -5,10 +5,14 @@ import android.util.Log
 import com.fahim.geminiApiComposeStarter.model.ChatMessage
 import com.fahim.geminiApiComposeStarter.model.MessageRole
 import com.google.ai.client.generativeai.GenerativeModel
+import com.google.ai.client.generativeai.type.Tool
 import com.google.ai.client.generativeai.type.content
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.withContext
 
 private const val TAG = "GeminiRepository"
@@ -19,7 +23,11 @@ class GeminiRepositoryImpl(
     private val modelName: String = DEFAULT_MODEL,
 ) : GeminiRepository {
 
-    private val model = GenerativeModel(modelName = modelName, apiKey = apiKey)
+    private val model = GenerativeModel(
+        modelName = modelName,
+        apiKey = apiKey,
+        tools = listOf(Tool.CODE_EXECUTION),
+    )
 
     override suspend fun generateText(prompt: String): Result<String> = withContext(Dispatchers.IO) {
         executeWithRetry {
@@ -44,6 +52,7 @@ class GeminiRepositoryImpl(
                     modelName = modelName,
                     apiKey = apiKey,
                     systemInstruction = content { text(systemInstruction) },
+                    tools = listOf(Tool.CODE_EXECUTION),
                 )
             } else {
                 model
@@ -66,6 +75,38 @@ class GeminiRepositoryImpl(
         }
     }
 
+    override fun generateChatStream(
+        prompt: String,
+        history: List<ChatMessage>,
+        systemInstruction: String?,
+    ): Flow<String> = flow {
+        val targetModel = if (!systemInstruction.isNullOrBlank()) {
+            GenerativeModel(
+                modelName = modelName,
+                apiKey = apiKey,
+                systemInstruction = content { text(systemInstruction) },
+                tools = listOf(Tool.CODE_EXECUTION),
+            )
+        } else {
+            model
+        }
+
+        val chatHistory = history.map { msg ->
+            content(role = if (msg.role == MessageRole.USER) "user" else "model") {
+                text(msg.content)
+            }
+        }
+
+        val chat = targetModel.startChat(history = chatHistory)
+        val responseFlow = chat.sendMessageStream(prompt)
+        responseFlow.collect { chunk ->
+            val chunkText = chunk.text
+            if (!chunkText.isNullOrEmpty()) {
+                emit(chunkText)
+            }
+        }
+    }.flowOn(Dispatchers.IO)
+
     override suspend fun generateMultimodal(
         prompt: String,
         imageBitmap: Bitmap,
@@ -77,6 +118,7 @@ class GeminiRepositoryImpl(
                     modelName = modelName,
                     apiKey = apiKey,
                     systemInstruction = content { text(systemInstruction) },
+                    tools = listOf(Tool.CODE_EXECUTION),
                 )
             } else {
                 model

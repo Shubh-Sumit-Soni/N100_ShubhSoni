@@ -115,6 +115,60 @@ object StudyPromptBuilder {
                 2. Transcribe any key equations, code, or labels.
                 3. Solve or explain the concept step-by-step with clear explanations.
             """.trimIndent()
+
+            StudyMode.FLASHCARDS -> """
+                You are an active recall flashcard creator.
+                Generate high-yield concept cards in JSON format within a ```json code block:
+                ```json
+                {
+                  "deckTitle": "<Topic>",
+                  "cards": [
+                    { "front": "<Question or prompt on front>", "back": "<Concise answer on back>", "topic": "<Subtopic>" }
+                  ]
+                }
+                ```
+                Also provide a human-readable list of cards following the JSON block.
+            """.trimIndent()
+
+            StudyMode.EXAM_SIMULATOR -> """
+                You are a university proctor and examination designer.
+                Construct a timed examination with 5 rigorous multiple-choice and short-answer questions.
+                Format clearly with point values per question and strict rubrics for grading.
+            """.trimIndent()
+
+            StudyMode.STUDY_PLANNER -> """
+                You are an academic productivity coach.
+                Generate an actionable, realistic day-by-day study timetable.
+                Format in JSON within a ```json code block:
+                ```json
+                {
+                  "subject": "<Subject Name>",
+                  "targetExamDate": "<Target Date>",
+                  "dailyTimeMinutes": 60,
+                  "days": [
+                    { "dayNumber": 1, "date": "Day 1", "topic": "<Topic>", "durationMinutes": 60, "objectives": ["Goal 1", "Goal 2"] }
+                  ]
+                }
+                ```
+                Include a motivational overview and study pacing strategy.
+            """.trimIndent()
+
+            StudyMode.REVISION -> """
+                You are an adaptive revision tutor specializing in weak-topic reinforcement.
+                Focus intensively on remedying misunderstandings, clarifying subtle edge cases, and giving targeted drills.
+            """.trimIndent()
+
+            StudyMode.WEAK_TOPIC_DETECTOR -> """
+                You are an academic diagnostic evaluator.
+                Probe the student with progressive questions across fundamentals, intermediate application, and advanced synthesis
+                to identify exact conceptual gaps.
+            """.trimIndent()
+
+            StudyMode.ASSIGNMENT_ASSISTANT -> """
+                You are an academic assignment guide and rubric reviewer.
+                Assist the student with assignment problem formulation, architecture, rubric compliance, and edge cases,
+                without directly doing the work for them. Guide them towards mastery.
+            """.trimIndent()
         }
     }
 
@@ -131,6 +185,12 @@ object StudyPromptBuilder {
             StudyMode.SUMMARIZE -> "Summarize the following study material into structured exam notes:\n$prompt"
             StudyMode.CODE_REVIEW -> "Review the following code for bugs, complexity, and improvements:\n$prompt"
             StudyMode.IMAGE_ANALYSIS -> if (prompt.isBlank()) "Explain this educational diagram or problem step-by-step." else prompt
+            StudyMode.FLASHCARDS -> "Generate a flashcard deck on:\n$prompt"
+            StudyMode.EXAM_SIMULATOR -> "Start a timed exam simulation on:\n$prompt"
+            StudyMode.STUDY_PLANNER -> "Create a structured study plan for:\n$prompt"
+            StudyMode.REVISION -> "Guide me through targeted revision on:\n$prompt"
+            StudyMode.WEAK_TOPIC_DETECTOR -> "Run a diagnostic assessment on my understanding of:\n$prompt"
+            StudyMode.ASSIGNMENT_ASSISTANT -> "Review and guide me on this assignment requirement:\n$prompt"
         }
     }
 }

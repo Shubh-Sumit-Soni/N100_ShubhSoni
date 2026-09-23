@@ -12,8 +12,12 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         ChatMessageEntity::class,
         ConversationEntity::class,
         QuizAttemptEntity::class,
+        UserMemoryEntity::class,
+        FlashcardEntity::class,
+        StudyPlanEntity::class,
+        WeakTopicEntity::class,
     ],
-    version = 2,
+    version = 3,
     exportSchema = false,
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -21,6 +25,10 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun chatMessageDao(): ChatMessageDao
     abstract fun conversationDao(): ConversationDao
     abstract fun quizAttemptDao(): QuizAttemptDao
+    abstract fun userMemoryDao(): UserMemoryDao
+    abstract fun flashcardDao(): FlashcardDao
+    abstract fun studyPlanDao(): StudyPlanDao
+    abstract fun weakTopicDao(): WeakTopicDao
 
     companion object {
         @Volatile
@@ -74,6 +82,68 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // 1. Create user_memories table
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS user_memories (
+                        id TEXT NOT NULL PRIMARY KEY,
+                        category TEXT NOT NULL,
+                        content TEXT NOT NULL,
+                        createdAt INTEGER NOT NULL,
+                        updatedAt INTEGER NOT NULL
+                    )
+                    """.trimIndent()
+                )
+
+                // 2. Create flashcards table
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS flashcards (
+                        id TEXT NOT NULL PRIMARY KEY,
+                        deckTitle TEXT NOT NULL,
+                        front TEXT NOT NULL,
+                        back TEXT NOT NULL,
+                        difficulty TEXT NOT NULL,
+                        reviewCount INTEGER NOT NULL,
+                        lastReviewedAt INTEGER NOT NULL,
+                        createdAt INTEGER NOT NULL
+                    )
+                    """.trimIndent()
+                )
+
+                // 3. Create study_plans table
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS study_plans (
+                        id TEXT NOT NULL PRIMARY KEY,
+                        subject TEXT NOT NULL,
+                        targetExamDate TEXT NOT NULL,
+                        dailyTimeMinutes INTEGER NOT NULL,
+                        planJson TEXT NOT NULL,
+                        createdAt INTEGER NOT NULL,
+                        isActive INTEGER NOT NULL
+                    )
+                    """.trimIndent()
+                )
+
+                // 4. Create weak_topics table
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS weak_topics (
+                        id TEXT NOT NULL PRIMARY KEY,
+                        topic TEXT NOT NULL,
+                        subject TEXT NOT NULL,
+                        failureCount INTEGER NOT NULL,
+                        successCount INTEGER NOT NULL,
+                        lastPracticedAt INTEGER NOT NULL
+                    )
+                    """.trimIndent()
+                )
+            }
+        }
+
         fun getInstance(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 INSTANCE ?: Room.databaseBuilder(
@@ -81,7 +151,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "gemini_chat.db"
                 )
-                    .addMigrations(MIGRATION_1_2)
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
                     .build()
                     .also { INSTANCE = it }
             }

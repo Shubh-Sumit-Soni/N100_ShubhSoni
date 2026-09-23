@@ -89,6 +89,66 @@ enum class StudyMode(
             "Solve the math problem in this image step-by-step",
             "Transcribe and explain this whiteboard algorithm",
         ),
+    ),
+    FLASHCARDS(
+        title = "Flashcard Generator",
+        description = "Generates front/back concept cards for active recall and spaced repetition practice.",
+        badgeLabel = "Flashcards",
+        quickPrompts = listOf(
+            "Generate 5 flashcards on Database Indexing and B+ Trees",
+            "Make flashcards for HTTP Status Codes and Headers",
+            "Create flashcards for CPU Scheduling Algorithms",
+        ),
+    ),
+    EXAM_SIMULATOR(
+        title = "Timed Exam Simulator",
+        description = "Full examination mode with countdown timer, strict scoring, and comprehensive review.",
+        badgeLabel = "Exam",
+        quickPrompts = listOf(
+            "Simulate a 10-minute exam on Object-Oriented Design Patterns",
+            "Start an exam simulation on Operating System Deadlocks",
+            "Give me a timed exam on Computer Architecture pipelines",
+        ),
+    ),
+    STUDY_PLANNER(
+        title = "Study Schedule Planner",
+        description = "Produces a realistic day-by-day study schedule based on available time and exam dates.",
+        badgeLabel = "Planner",
+        quickPrompts = listOf(
+            "Plan a 7-day study schedule for Data Structures (2 hours/day)",
+            "Create an exam prep roadmap for Operating Systems in 5 days",
+            "Build a study timetable for Mobile Application Development",
+        ),
+    ),
+    REVISION(
+        title = "Targeted Revision Mode",
+        description = "Retrieves previously missed quiz topics and drills them until mastered.",
+        badgeLabel = "Revision",
+        quickPrompts = listOf(
+            "Review my weak topics and give me drill questions",
+            "Help me revise concepts I struggled with in recent quizzes",
+            "Generate targeted practice on my lowest-scoring areas",
+        ),
+    ),
+    WEAK_TOPIC_DETECTOR(
+        title = "Diagnostic Assessment",
+        description = "Probes your understanding across the curriculum to diagnose knowledge gaps.",
+        badgeLabel = "Diagnostic",
+        quickPrompts = listOf(
+            "Diagnose my knowledge gaps in Computer Networks",
+            "Run a diagnostic test on Database Normalization",
+            "Find my weak spots in Algorithms and Asymptotics",
+        ),
+    ),
+    ASSIGNMENT_ASSISTANT(
+        title = "Assignment & Rubric Guide",
+        description = "Provides architectural guidance, edge-case checking, and rubric compliance.",
+        badgeLabel = "Assignment",
+        quickPrompts = listOf(
+            "Check my design against standard assignment rubric criteria",
+            "Help me structure my technical report for lab submission",
+            "Verify edge cases for my database assignment schema",
+        ),
     );
 
     companion object {

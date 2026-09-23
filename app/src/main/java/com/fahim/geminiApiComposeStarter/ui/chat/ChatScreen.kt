@@ -36,17 +36,31 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.AddPhotoAlternate
+import androidx.compose.material.icons.filled.AttachFile
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.DeleteSweep
+import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Hearing
 import androidx.compose.material.icons.filled.Insights
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.School
 import androidx.compose.material.icons.filled.VolumeUp
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import com.fahim.geminiApiComposeStarter.audio.TextToSpeechManager
+import com.fahim.geminiApiComposeStarter.core.tools.DocumentProcessorTool
+import com.fahim.geminiApiComposeStarter.ui.dashboard.DashboardScreen
+import com.fahim.geminiApiComposeStarter.ui.library.KnowledgeLibraryScreen
+import com.fahim.geminiApiComposeStarter.ui.memory.MemoryManagementScreen
+import com.fahim.geminiApiComposeStarter.ui.navigation.NavigationDestination
+import com.fahim.geminiApiComposeStarter.ui.settings.SettingsScreen
+import com.fahim.geminiApiComposeStarter.ui.voice.LiveVoiceDialog
+import com.fahim.geminiApiComposeStarter.ui.voice.VoiceState
+import com.fahim.geminiApiComposeStarter.ui.workflows.StudyWorkflowsScreen
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.Card
@@ -125,29 +139,167 @@ object ChatTestTags {
 @Composable
 fun ChatRoute(
     viewModel: ChatViewModel,
-    onSpeakMessage: (String, String) -> Unit = { _, _ -> },
+    textToSpeechManager: TextToSpeechManager? = null,
+    onSpeakMessage: (String, String) -> Unit = { messageId, text ->
+        textToSpeechManager?.speak(messageId, text)
+    },
+    onShareContent: (String) -> Unit = {},
+    onUpdateApiKey: (String) -> Unit = {},
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val isSpeaking by (textToSpeechManager?.isSpeaking?.collectAsStateWithLifecycle()
+        ?: remember { androidx.compose.runtime.mutableStateOf(false) })
 
-    ChatScreen(
-        state = state,
-        onPromptChange = viewModel::onPromptChange,
-        onSend = viewModel::onSend,
-        onDismissError = viewModel::onDismissError,
-        onClearHistory = viewModel::onClearHistory,
-        onModeSelected = viewModel::setMode,
-        onQuickAction = viewModel::onQuickAction,
-        onToggleSaveNote = viewModel::onToggleSaveNote,
-        onSelectConversation = viewModel::loadConversationMessages,
-        onNewConversation = viewModel::createNewSession,
-        onDeleteConversation = viewModel::deleteSession,
-        onImageSelected = viewModel::onImageSelected,
-        onClearImage = viewModel::onClearImage,
-        onShowModeDialog = viewModel::setShowModeDialog,
-        onShowSavedNotes = viewModel::setShowSavedNotesDialog,
-        onShowInsights = viewModel::setShowInsightsDialog,
-        onSpeakMessage = onSpeakMessage,
-    )
+    Scaffold(
+        bottomBar = {
+            NavigationBar {
+                NavigationDestination.entries.forEach { destination ->
+                    NavigationBarItem(
+                        selected = state.selectedNavigation == destination,
+                        onClick = { viewModel.setNavigation(destination) },
+                        icon = { Icon(destination.icon, contentDescription = destination.title) },
+                        label = { Text(destination.title) },
+                    )
+                }
+            }
+        },
+    ) { innerPadding ->
+        Box(modifier = Modifier.padding(innerPadding)) {
+            when (state.selectedNavigation) {
+                NavigationDestination.DASHBOARD -> {
+                    DashboardScreen(
+                        conversations = state.conversations,
+                        savedNotesCount = state.savedNotes.size,
+                        quizAttempts = state.quizAttempts,
+                        flashcardCount = state.flashcards.size,
+                        weakTopics = state.weakTopics,
+                        onNavigate = { viewModel.setNavigation(it) },
+                        onStartMode = { mode ->
+                            viewModel.createNewSession(mode)
+                        },
+                        onOpenVoice = {
+                            viewModel.setShowLiveVoiceDialog(true)
+                        },
+                        onSelectConversation = { convId ->
+                            viewModel.loadConversationMessages(convId)
+                            viewModel.setNavigation(NavigationDestination.CHAT)
+                        },
+                        onStudyWeakTopic = { topic ->
+                            viewModel.onPromptChange("I want to revise and practice: $topic. Please explain core principles and test me.")
+                            viewModel.setNavigation(NavigationDestination.CHAT)
+                        },
+                    )
+                }
+                NavigationDestination.CHAT -> {
+                    ChatScreen(
+                        state = state,
+                        onPromptChange = viewModel::onPromptChange,
+                        onSend = viewModel::onSend,
+                        onDismissError = viewModel::onDismissError,
+                        onClearHistory = viewModel::onClearHistory,
+                        onModeSelected = viewModel::setMode,
+                        onQuickAction = viewModel::onQuickAction,
+                        onToggleSaveNote = viewModel::onToggleSaveNote,
+                        onSelectConversation = viewModel::loadConversationMessages,
+                        onNewConversation = viewModel::createNewSession,
+                        onDeleteConversation = viewModel::deleteSession,
+                        onImageSelected = viewModel::onImageSelected,
+                        onClearImage = viewModel::onClearImage,
+                        onShowModeDialog = viewModel::setShowModeDialog,
+                        onShowSavedNotes = viewModel::setShowSavedNotesDialog,
+                        onShowInsights = viewModel::setShowInsightsDialog,
+                        onSpeakMessage = onSpeakMessage,
+                        onOpenVoiceDialog = { viewModel.setShowLiveVoiceDialog(true) },
+                        onDocumentAttached = viewModel::onDocumentAttached,
+                        onClearDocument = viewModel::onClearDocument,
+                    )
+                }
+                NavigationDestination.STUDY_WORKFLOWS -> {
+                    StudyWorkflowsScreen(
+                        onGeneratePrompt = { prompt, onResult ->
+                            viewModel.generateOneOffPrompt(prompt, onResult)
+                        },
+                        onSaveQuizScore = { topic, score, total, strong, rev ->
+                            viewModel.onRecordQuizScore(topic, score, total, strong, rev)
+                        },
+                        onSaveFlashcards = { cards ->
+                            viewModel.saveFlashcards(cards)
+                        },
+                        onSaveStudyPlan = { plan ->
+                            viewModel.saveStudyPlan(plan)
+                        },
+                        onAddWeakTopic = { topic, subject ->
+                            viewModel.addWeakTopic(topic, subject)
+                        },
+                        savedFlashcards = state.flashcards,
+                    )
+                }
+                NavigationDestination.KNOWLEDGE_LIBRARY -> {
+                    KnowledgeLibraryScreen(
+                        savedNotes = state.savedNotes,
+                        flashcards = state.flashcards,
+                        studyPlans = state.studyPlans,
+                        weakTopics = state.weakTopics,
+                        onDeleteNote = { viewModel.onToggleSaveNote(it) },
+                        onDeleteFlashcard = { viewModel.deleteFlashcard(it) },
+                        onDeleteStudyPlan = { viewModel.deleteStudyPlan(it) },
+                        onResolveWeakTopic = { viewModel.resolveWeakTopic(it) },
+                        onShareContent = onShareContent,
+                    )
+                }
+                NavigationDestination.MEMORY -> {
+                    MemoryManagementScreen(
+                        memories = state.userMemories,
+                        onAddMemory = { content, category ->
+                            viewModel.addMemory(content, category)
+                        },
+                        onDeleteMemory = { viewModel.deleteMemory(it) },
+                        onClearAllMemories = { viewModel.clearAllMemories() },
+                    )
+                }
+                NavigationDestination.SETTINGS -> {
+                    SettingsScreen(
+                        hasApiKey = state.hasApiKey,
+                        isStreamingEnabled = state.isStreamingEnabled,
+                        onToggleStreaming = { viewModel.setStreamingEnabled(it) },
+                        isHandsFreeVoice = state.isHandsFreeVoice,
+                        onToggleHandsFreeVoice = { viewModel.setHandsFreeVoice(it) },
+                        onUpdateApiKey = onUpdateApiKey,
+                        onClearAllData = { viewModel.clearAllWorkspaceData() },
+                        totalMessagesCount = state.messages.size,
+                        savedNotesCount = state.savedNotes.size,
+                        flashcardsCount = state.flashcards.size,
+                        studyPlansCount = state.studyPlans.size,
+                        memoriesCount = state.userMemories.size,
+                    )
+                }
+            }
+        }
+    }
+
+    if (state.showLiveVoiceDialog) {
+        LiveVoiceDialog(
+            voiceState = state.voiceState,
+            isSpeaking = isSpeaking,
+            recentMessages = state.messages,
+            handsFreeEnabled = state.isHandsFreeVoice,
+            onToggleHandsFree = { viewModel.toggleHandsFreeVoice() },
+            onVoiceInputReceived = { spokenText ->
+                viewModel.sendVoiceInput(spokenText) { response ->
+                    textToSpeechManager?.speak("live_voice", response)
+                }
+            },
+            onInterrupt = {
+                textToSpeechManager?.stop()
+                viewModel.setVoiceState(VoiceState.IDLE)
+            },
+            onDismiss = {
+                textToSpeechManager?.stop()
+                viewModel.setShowLiveVoiceDialog(false)
+                viewModel.setVoiceState(VoiceState.IDLE)
+            },
+        )
+    }
 }
 
 // ── Main Workspace Screen ───────────────────────────────────────────────────
@@ -172,6 +324,9 @@ fun ChatScreen(
     onShowSavedNotes: (Boolean) -> Unit = {},
     onShowInsights: (Boolean) -> Unit = {},
     onSpeakMessage: (String, String) -> Unit = { _, _ -> },
+    onOpenVoiceDialog: () -> Unit = {},
+    onDocumentAttached: (String, String) -> Unit = { _, _ -> },
+    onClearDocument: () -> Unit = {},
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
     val listState = rememberLazyListState()
@@ -243,6 +398,7 @@ fun ChatScreen(
                     onOpenDrawer = { coroutineScope.launch { drawerState.open() } },
                     onShowSavedNotes = { onShowSavedNotes(true) },
                     onShowInsights = { onShowInsights(true) },
+                    onOpenVoiceDialog = onOpenVoiceDialog,
                     onClearHistory = onClearHistory,
                 )
             },
@@ -304,10 +460,13 @@ fun ChatScreen(
                         enabled = !state.isLoading,
                         activeMode = state.activeMode,
                         selectedBitmap = state.selectedImageBitmap,
+                        attachedDocName = state.attachedDocName,
                         onPromptChange = onPromptChange,
                         onSend = onSend,
                         onImageSelected = onImageSelected,
                         onClearImage = onClearImage,
+                        onDocumentAttached = onDocumentAttached,
+                        onClearDocument = onClearDocument,
                         onOpenModeSelector = { onShowModeDialog(true) },
                         modifier = Modifier.fillMaxWidth(),
                     )
@@ -328,6 +487,7 @@ private fun WorkspaceTopBar(
     onOpenDrawer: () -> Unit,
     onShowSavedNotes: () -> Unit,
     onShowInsights: () -> Unit,
+    onOpenVoiceDialog: () -> Unit = {},
     onClearHistory: () -> Unit,
 ) {
     TopAppBar(
@@ -359,6 +519,13 @@ private fun WorkspaceTopBar(
             titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
         ),
         actions = {
+            IconButton(onClick = onOpenVoiceDialog) {
+                Icon(
+                    imageVector = Icons.Default.Hearing,
+                    contentDescription = "Live Voice Mode",
+                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                )
+            }
             IconButton(
                 onClick = onShowInsights,
                 modifier = Modifier.testTag(ChatTestTags.INSIGHTS_BUTTON),
@@ -755,10 +922,13 @@ private fun WorkspaceInputBar(
     enabled: Boolean,
     activeMode: StudyMode,
     selectedBitmap: Bitmap?,
+    attachedDocName: String? = null,
     onPromptChange: (String) -> Unit,
     onSend: () -> Unit,
     onImageSelected: (Bitmap?, String?) -> Unit,
     onClearImage: () -> Unit,
+    onDocumentAttached: (String, String) -> Unit = { _, _ -> },
+    onClearDocument: () -> Unit = {},
     onOpenModeSelector: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -788,11 +958,71 @@ private fun WorkspaceInputBar(
         }
     }
 
+    // Document picker launcher (notes, code, csv)
+    val docPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri: Uri? ->
+        if (uri != null) {
+            val processed = DocumentProcessorTool().processDocument(context, uri)
+            if (processed != null) {
+                onDocumentAttached(processed.fileName, processed.extractedText)
+            }
+        }
+    }
+
     Column(
         modifier = modifier
             .background(MaterialTheme.colorScheme.surface)
             .padding(horizontal = 12.dp, vertical = 8.dp),
     ) {
+        // Document attachment preview banner
+        if (attachedDocName != null) {
+            Surface(
+                shape = RoundedCornerShape(10.dp),
+                color = MaterialTheme.colorScheme.tertiaryContainer,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 6.dp),
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Description,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onTertiaryContainer,
+                            modifier = Modifier.size(18.dp),
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = attachedDocName,
+                            style = MaterialTheme.typography.bodySmall,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onTertiaryContainer,
+                            maxLines = 1,
+                        )
+                    }
+                    IconButton(
+                        onClick = onClearDocument,
+                        modifier = Modifier.size(24.dp),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "Remove document",
+                            tint = MaterialTheme.colorScheme.onTertiaryContainer,
+                            modifier = Modifier.size(16.dp),
+                        )
+                    }
+                }
+            }
+        }
+
         // Image attachment preview banner
         if (selectedBitmap != null) {
             Surface(
@@ -857,6 +1087,27 @@ private fun WorkspaceInputBar(
                 Icon(
                     imageVector = Icons.Default.AddPhotoAlternate,
                     contentDescription = stringResource(R.string.attach_image),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+
+            // Document attachment button
+            IconButton(
+                onClick = {
+                    docPickerLauncher.launch(
+                        arrayOf(
+                            "text/*",
+                            "application/json",
+                            "text/plain",
+                            "text/csv",
+                        )
+                    )
+                },
+                enabled = enabled,
+            ) {
+                Icon(
+                    imageVector = Icons.Default.AttachFile,
+                    contentDescription = "Attach Document",
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
